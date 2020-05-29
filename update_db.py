@@ -1,13 +1,14 @@
 import json
 import time
+import copy
 import sqlite3
-import numpy as np
-import pandas as pd
 import requests
 import urllib.request
-from datetime import datetime
+import numpy as np
+import pandas as pd
 from bs4 import BeautifulSoup
 from selenium import webdriver
+from datetime import datetime
 
 
 def scrape(links):
@@ -15,7 +16,12 @@ def scrape(links):
     for link in links:
         data.append(collect_data(link))
     
-    return pd.DataFrame(data)
+    features = ['aangeboden', 'verkocht', 'gezocht', 'name']
+    
+    data = pd.DataFrame(data).fillna(0)
+    data.loc[:, ['aangeboden', 'verkocht', 'gezocht']] = data.loc[:, ['aangeboden', 'verkocht', 'gezocht']].astype('int')
+    
+    return data
 
 
 
@@ -24,14 +30,14 @@ def find_links():
     driver.get('https://www.ticketswap.nl/festivals')
     time.sleep(4)
 
-    #x = 6
-    #while True:
-     #   try:
-      #      driver.find_element_by_xpath('//*[@id="__next"]/div[3]/div/div/div[{}]/button'.format(x)).click()
-       #     time.sleep(2)
-        #    x+= 12
-        #except:
-         #   break
+    x = 6
+    while True:
+        try:
+            driver.find_element_by_xpath('//*[@id="__next"]/div[3]/div/div/div[{}]/button'.format(x)).click()
+            time.sleep(2)
+            x+= 12
+        except:
+            break
 
     i = 1
     links = []
@@ -78,41 +84,85 @@ def collect_event_data(soup):
 
 
 
-def update_db():    
+def create():
     conn = sqlite3.connect('test.db')
     c = conn.cursor()
+    
+    hours = ", ".join(['hour'+str(i) + " int default 0" for i in range(24)])
+    c.execute("CREATE TABLE IF NOT EXISTS base (name varchar(255), aangeboden int, verkocht int, gezocht int, " + hours + ');')
+    
+    conn.commit()
+    conn.close()
 
 
-    c.execute('CREATE TABLE IF NOT EXISTS base (name varchar(255), aangeboden int, verkocht int, gezocht int);')
-    c.execute('CREATE TABLE IF NOT EXISTS change (name varchar(255), change int, hour int);')
 
-    old = pd.read_sql_query('SELECT name, aangeboden, verkocht, gezocht FROM base;', conn)
-
-    difference = data - old.loc[:, ['aangeboden', 'verkocht', 'gezocht']]
-    difference['name'] = data['name']
-    difference['change'] = difference['aangeboden'] - difference['gezocht']
-    difference['hour'] = datetime.now().hour
-    change_values = [row for row in difference.loc[:, ['name', 'change', 'hour']].itertuples(index=False)]
-    c.executemany('INSERT INTO change (name, change, hour) VALUES (?,?,?);', change_values)
-
-
-    c.execute('DELETE FROM base;')
-    base_values = [tuple(row) for row in data.itertuples(index=False)]
-    c.executemany('INSERT INTO base (name, aangeboden, verkocht, gezocht) VALUES (?,?,?,?);', base_values)
+def difference():    
+    conn = sqlite3.connect('test.db')
+    c = conn.cursor()
+    
+    old_base = pd.read_sql_query('SELECT name, aangeboden, verkocht FROM base;', conn)
+    difference = data.loc[:, ['aangeboden', 'verkocht']] - old_base.loc[:, ['aangeboden', 'verkocht']]
+    difference['change'] = difference['aangeboden'] - difference['verkocht']
+    difference['name'] = data.loc[:, 'name']
+    
+    conn.commit()
+    conn.close()
+    
+    return difference.dropna()
 
 
-    base_query = pd.read_sql_query('SELECT * FROM base;', conn)
-    change_query = pd.read_sql_query('SELECT * FROM change;', conn)
-    print(base_query)
-    print()
-    print(change_query)
+
+def update_values():    
+    conn = sqlite3.connect('test.db')
+    c = conn.cursor()
+    
+    new_values = [tuple(row) for row in data.loc[:, ['name', 'aangeboden', 'verkocht', 'gezocht']].itertuples(index=False)]
+    c.executemany('INSERT INTO base (name, aangeboden, verkocht, gezocht) VALUES (?, ?, ?, ?);', new_values)
 
     conn.commit()
     conn.close()
 
+
+
+def update_change():
+    conn = sqlite3.connect('test.db')
+    c = conn.cursor()
+
+    change = [x for x in difference.loc[:, 'change']]
+    names = [x for x in difference.loc[:, 'name']]
+    
+    insert = []
+    for name, change in zip(names, change):
+        insert.append((change, name))
+    
+    hour = 'hour' + str(datetime.now().hour)
+    query = "UPDATE base SET {} = {} + ? WHERE name = ?;".format(hour, hour)
+    
+    c.executemany(query, insert)
+    
+    conn.commit()
+    conn.close()
+
+
+
 features = ['aangeboden', 'verkocht', 'gezocht', 'name']
 data = scrape(find_links())
-data = data.fillna(0)
-data.loc[:, ['aangeboden', 'verkocht', 'gezocht']] = data.loc[:, ['aangeboden', 'verkocht', 'gezocht']].astype('int')
+create()
+difference = difference()
+update_values()
+update_change()
 
-update_db()
+
+def print_database():
+    conn = sqlite3.connect('test.db')
+    c = conn.cursor()
+    hours = [str(x) for x in range(24)]
+    cols = ['name', 'aangeboden', 'verkocht', 'gezocht']
+    for h in hours:
+        cols.append(h)
+    print(pd.DataFrame(c.execute('SELECT * FROM base;'), columns = cols))
+
+    conn.commit()
+    conn.close()
+
+print_database()
