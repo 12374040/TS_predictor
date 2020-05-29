@@ -89,7 +89,7 @@ def create():
     c = conn.cursor()
     
     hours = ", ".join(['hour'+str(i) + " int default 0" for i in range(24)])
-    c.execute("CREATE TABLE IF NOT EXISTS base (name varchar(255), aangeboden int, verkocht int, gezocht int, " + hours + ');')
+    c.execute("CREATE TABLE IF NOT EXISTS base (name varchar(255) PRIMARY KEY, aangeboden int, verkocht int, gezocht int, " + hours + ');')
     
     conn.commit()
     conn.close()
@@ -117,7 +117,7 @@ def update_values():
     c = conn.cursor()
     
     new_values = [tuple(row) for row in data.loc[:, ['name', 'aangeboden', 'verkocht', 'gezocht']].itertuples(index=False)]
-    c.executemany('INSERT INTO base (name, aangeboden, verkocht, gezocht) VALUES (?, ?, ?, ?);', new_values)
+    c.executemany('REPLACE INTO base (name, aangeboden, verkocht, gezocht) VALUES (?, ?, ?, ?);', new_values)
 
     conn.commit()
     conn.close()
