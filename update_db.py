@@ -33,7 +33,7 @@ def scrape(links):
         soup = BeautifulSoup(request.text, features="html.parser")
 
         ticket_features = ['aangeboden', 'verkocht', 'gezocht' ]
-        ticket_soup = soup.find_all("span", { "class" : "css-v0hcsa e7cn512" })
+        ticket_soup = soup.find_all("span", { "class" : "css-v0hcsa e7cn512" }) # vind gezocht, verkocht en gezocht aantallen 
         ticket_data = {ticket_features[i] : ticket_soup[i].span.text for i in range(len(ticket_soup))}
         
         event_soup = str(soup.find_all("script", { "type" : "application/ld+json"})[0].string)
