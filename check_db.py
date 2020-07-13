@@ -24,4 +24,4 @@ def check_links():
     return lf.head(50)
 
 print(check_links())
-# print(check_database())
+print(check_database())
