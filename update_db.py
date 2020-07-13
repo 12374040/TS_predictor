@@ -40,7 +40,10 @@ def scrape(links):
 
         ticket_data['event_date'] = soup.findAll("div", {"class": "css-102v2t9 ey3w7ki1"})[0].text
         ticket_data['location'] = soup.findAll("div", {"class": "css-102v2t9 ey3w7ki1"})[1].text
-        ticket_data['facebook'] = soup.find("div", {"class": "css-1fwnys8 e1tolpgy2"}).find('a').get('href')
+        try:
+            ticket_data['facebook'] = soup.find("div", {"class": "css-1fwnys8 e1tolpgy2"}).find('a').get('href')
+        except:
+            ticket_data['facebook'] = 'None'
         ticket_data['link'] = link
         data.append(ticket_data)
 
@@ -66,14 +69,14 @@ def links():
             continue
         break
 
-    #x = 6
-    #while True:
-    #    try:
-    #        driver.find_element_by_xpath('//*[@id="__next"]/div[3]/div/div/div[{}]/button'.format(x)).click()
-    #        time.sleep(1)
-    #        x+= 12
-    #    except:
-    #        break
+    x = 6
+    while True:
+        try:
+            driver.find_element_by_xpath('//*[@id="__next"]/div[3]/div/div/div[{}]/button'.format(x)).click()
+            time.sleep(1)
+            x+= 12
+        except:
+            break
 
     x = 1
     links = []
