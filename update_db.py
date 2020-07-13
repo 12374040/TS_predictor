@@ -8,79 +8,71 @@ import numpy as np
 import pandas as pd
 from bs4 import BeautifulSoup
 from selenium import webdriver
+from selenium.webdriver.chrome.options import Options
 from datetime import datetime
-
 
 def scrape(links):
     data = []
     for link in links:
-        data.append(collect_data(link))
-    
-    features = ['aangeboden', 'verkocht', 'gezocht', 'name']
-    
-    data = pd.DataFrame(data).fillna(0)
-    data.loc[:, ['aangeboden', 'verkocht', 'gezocht']] = data.loc[:, ['aangeboden', 'verkocht', 'gezocht']].astype('int')
-    
-    return data
+        request = requests.get(link)
+        soup = BeautifulSoup(request.text, features="html.parser")
+
+        ticket_features = ['aangeboden', 'verkocht', 'gezocht' ]
+        ticket_soup = soup.find_all("span", { "class" : "css-v0hcsa e7cn512" })
+        ticket_data = {ticket_features[i] : ticket_soup[i].span.text for i in range(len(ticket_soup))}
+        
+        event_soup = str(soup.find_all("script", { "type" : "application/ld+json"})[0].string)
+        event_datapoint = json.loads(''.join([event_soup[i] for i in range(len(event_soup)) if event_soup[i] != "\n"]))
+        ticket_data['name'] = event_datapoint['itemListElement'][3]['item']['name']
+
+        ticket_data['event_date'] = soup.findAll("div", {"class": "css-102v2t9 ey3w7ki1"})[0].text
+        ticket_data['location'] = soup.findAll("div", {"class": "css-102v2t9 ey3w7ki1"})[1].text
+
+        data.append(ticket_data)
 
 
+    df = pd.DataFrame(data).fillna(0)
+    df.loc[:, ['aangeboden', 'verkocht', 'gezocht']] = df.loc[:, ['aangeboden', 'verkocht', 'gezocht']].astype('int')
+    df['date'] = [datetime.now(tz=None).strftime("%Y/%m/%d %H:%M:%S") for i in range(len(df))]
 
-def find_links():
-    driver = webdriver.Chrome('chromedriver.exe')
+    return df
+
+
+def links():
+    options = Options()
+    options.headless = True
+    driver = webdriver.Chrome('chromedriver.exe', options=options)
     driver.get('https://www.ticketswap.nl/festivals')
-    time.sleep(4)
 
-    x = 6
     while True:
         try:
-            driver.find_element_by_xpath('//*[@id="__next"]/div[3]/div/div/div[{}]/button'.format(x)).click()
-            time.sleep(2)
-            x+= 12
+            temp = driver.find_element_by_xpath('//*[@id="__next"]/div[3]/div/div/div[1]/a').get_attribute("href")
         except:
-            break
+            time.sleep(0.2)
+            continue
+        break
 
-    i = 1
+    #x = 6
+    #while True:
+    #    try:
+    #        driver.find_element_by_xpath('//*[@id="__next"]/div[3]/div/div/div[{}]/button'.format(x)).click()
+    #        time.sleep(1)
+    #        x+= 12
+    #    except:
+    #        break
+
+    x = 1
     links = []
     while True:
         try:
-            links.append(driver.find_element_by_xpath('//*[@id="__next"]/div[3]/div/div/div[{}]/a'.format(i)).get_attribute("href"))
-            i+= 1
+            links.append(driver.find_element_by_xpath('//*[@id="__next"]/div[3]/div/div/div[{}]/a'.format(x)).get_attribute("href"))
+            x+= 1
         except: 
             break
     
+    print('{} links found'.format(len(links)))
+    print('scraping...')
     return links
-
-
-
-def collect_data(url):
-    request = requests.get(url)
-    soup = BeautifulSoup(request.text, features="html.parser")
-    ticket_data = collect_ticket_data(soup)
-    event_data = collect_event_data(soup)
-
-    return {**ticket_data, **event_data} 
-    
-    
-    
-def collect_ticket_data(soup):
-    # find data
-    ticket_data = soup.find_all("span", { "class" : "css-v0hcsa e7cn512" })
-    
-    # structuring dict
-    ticket_data = {features[i] : ticket_data[i].span.text for i in range(len(ticket_data))}
-    
-    return ticket_data
-    
-    
-    
-def collect_event_data(soup):
-    # find data and put it in dict
-    event_data = str(soup.find_all("script", { "type" : "application/ld+json"})[0].string)
-    event_data = json.loads(''.join([event_data[i] for i in range(len(event_data)) if event_data[i] != "\n"]))
-
-    event_data = {'name' : event_data['itemListElement'][3]['item']['name']}
-    
-    return event_data
 
 
 
@@ -89,80 +81,25 @@ def create():
     c = conn.cursor()
     
     hours = ", ".join(['hour'+str(i) + " int default 0" for i in range(24)])
-    c.execute("CREATE TABLE IF NOT EXISTS base (name varchar(255) PRIMARY KEY, aangeboden int, verkocht int, gezocht int, " + hours + ');')
+    c.execute("CREATE TABLE IF NOT EXISTS base (name varchar(255), event_date varchar(255), location varchar(255), aangeboden int, verkocht int, gezocht int, timestamp varchar(255));")
     
     conn.commit()
     conn.close()
 
 
 
-def difference():    
+def update_values(data): 
+    print('updating...')
     conn = sqlite3.connect('test.db')
     c = conn.cursor()
     
-    old_base = pd.read_sql_query('SELECT name, aangeboden, verkocht FROM base;', conn)
-    difference = data.loc[:, ['aangeboden', 'verkocht']] - old_base.loc[:, ['aangeboden', 'verkocht']]
-    difference['change'] = difference['aangeboden'] - difference['verkocht']
-    difference['name'] = data.loc[:, 'name']
-    
-    conn.commit()
-    conn.close()
-    
-    return difference.dropna()
-
-
-
-def update_values():    
-    conn = sqlite3.connect('test.db')
-    c = conn.cursor()
-    
-    new_values = [tuple(row) for row in data.loc[:, ['name', 'aangeboden', 'verkocht', 'gezocht']].itertuples(index=False)]
-    c.executemany('REPLACE INTO base (name, aangeboden, verkocht, gezocht) VALUES (?, ?, ?, ?);', new_values)
+    new_values = [tuple(row) for row in data.itertuples(index=False)]
+    c.executemany('INSERT INTO base (name, event_date, location, aangeboden, verkocht, gezocht, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?);', new_values)
 
     conn.commit()
     conn.close()
 
 
-
-def update_change():
-    conn = sqlite3.connect('test.db')
-    c = conn.cursor()
-
-    change = [x for x in difference.loc[:, 'change']]
-    names = [x for x in difference.loc[:, 'name']]
-    
-    insert = []
-    for name, change in zip(names, change):
-        insert.append((change, name))
-    
-    hour = 'hour' + str(datetime.now().hour)
-    query = "UPDATE base SET {} = {} + ? WHERE name = ?;".format(hour, hour)
-    
-    c.executemany(query, insert)
-    
-    conn.commit()
-    conn.close()
-
-
-
-features = ['aangeboden', 'verkocht', 'gezocht', 'name']
-data = scrape(find_links())
 create()
-difference = difference()
-update_values()
-update_change()
-
-
-def print_database():
-    conn = sqlite3.connect('test.db')
-    c = conn.cursor()
-    hours = [str(x) for x in range(24)]
-    cols = ['name', 'aangeboden', 'verkocht', 'gezocht']
-    for h in hours:
-        cols.append(h)
-    print(pd.DataFrame(c.execute('SELECT * FROM base;'), columns = cols))
-
-    conn.commit()
-    conn.close()
-
-print_database()
+data = scrape(links())
+update_values(data)
