@@ -39,6 +39,7 @@ def scrape(links):
         ticket_data['name'] = event_datapoint['itemListElement'][3]['item']['name']
 
         ticket_data['event_date'] = soup.findAll("div", {"class": "css-102v2t9 ey3w7ki1"})[0].text
+
         ticket_data['location'] = soup.findAll("div", {"class": "css-102v2t9 ey3w7ki1"})[1].text
         try:
             ticket_data['facebook'] = soup.find("div", {"class": "css-1fwnys8 e1tolpgy2"}).find('a').get('href')
@@ -61,13 +62,7 @@ def links():
     driver = webdriver.Chrome(get_driver(), options=options)
     driver.get('https://www.ticketswap.nl/festivals')
 
-    while True:
-        try:
-            temp = driver.find_element_by_xpath('//*[@id="__next"]/div[3]/div/div/div[1]/a').get_attribute("href")
-        except:
-            time.sleep(0.2)
-            continue
-        break
+    time.sleep(4)
 
     x = 6
     while True:
