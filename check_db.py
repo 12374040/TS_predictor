@@ -11,7 +11,7 @@ def check_database():
     conn.commit()
     conn.close()
 
-    return df.iloc[1, :]
+    return df
 
 def check_links():
     conn = sqlite3.connect('links.db')
