@@ -10,7 +10,9 @@ import pandas as pd
 from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.common.by import By
 from datetime import datetime
+
 
 api_key = 'EAARj9Kx1ZCdIBAPQaszyaLc3kujJaZAHZCYSuXeZB1jjWCKswtkb3ZBtQ9QjpNdcOLZCHgklGT6YGHFTcuFdtZCecnRMVkBCKFcD5DZAPnfFchGDqRptFFImsjAQyGENSTAnNBs9apdwSnpikdehJnCCy6doORP3uCg860Nq4CzN0kIKFizJFdhzedXUI3Lab7ZBRZAEM3hZAR0vC4n01jayYAMwF5ElMrHtnGMOHV2e8POAgZDZD'
 
@@ -37,8 +39,12 @@ def scrape(links):
         event_soup = str(soup.find_all("script", { "type" : "application/ld+json"})[0].string)
         event_datapoint = json.loads(''.join([event_soup[i] for i in range(len(event_soup)) if event_soup[i] != "\n"]))
         ticket_data['name'] = event_datapoint['itemListElement'][3]['item']['name']
+        
+        event_date = soup.findAll("div", {"class": "css-102v2t9 ey3w7ki1"})[0].text
+        
+        ticket_data['event_date'] = event_date.split('}')[-1]
+        print(ticket_data['event_date'])
 
-        ticket_data['event_date'] = soup.findAll("div", {"class": "css-102v2t9 ey3w7ki1"})[0].text
         ticket_data['location'] = soup.findAll("div", {"class": "css-102v2t9 ey3w7ki1"})[1].text
         try:
             ticket_data['facebook'] = soup.find("div", {"class": "css-1fwnys8 e1tolpgy2"}).find('a').get('href')
@@ -60,36 +66,36 @@ def links():
     options.headless = True
     driver = webdriver.Chrome(get_driver(), options=options)
     driver.get('https://www.ticketswap.nl/festivals')
-
-    while True:
-        try:
-            temp = driver.find_element_by_xpath('//*[@id="__next"]/div[3]/div/div/div[1]/a').get_attribute("href")
-        except:
-            time.sleep(0.2)
-            continue
-        break
-
-    x = 6
-    while True:
-        try:
-            driver.find_element_by_xpath('//*[@id="__next"]/div[3]/div/div/div[{}]/button'.format(x)).click()
-            time.sleep(1)
-            x+= 12
-        except:
-            break
-
-    x = 1
+    xpath = []
     links = []
-    while True:
-        try:
-            links.append(driver.find_element_by_xpath('//*[@id="__next"]/div[3]/div/div/div[{}]/a'.format(x)).get_attribute("href"))
-            x+= 1
-        except: 
-            break
+    events = []
+    is_event = '/event/'
+
+    time.sleep(5)
     
-    print('{} links found'.format(len(links)))
+    # while True:
+    #     try:
+    #         driver.find_element(By.XPATH, '//h4[text()="Laat meer zien"]').click() # click load more
+    #         time.sleep(1)
+    #     except:
+    #         print('no load more')
+    #         break
+
+
+    xpath.extend(driver.find_elements(By.XPATH, '//a'))
+    
+    for x in xpath:
+        links.append(str(x.get_attribute("href")))# append link to list
+        # print(str(x.get_attribute("href")))
+    # print('links = ' + str(links))
+
+    driver.close()
+    events = [x for x in links if is_event in x]
+    
+    
+    print('{} links found'.format(len(events)))
     print('scraping...')
-    return links
+    return events
 
 
 
