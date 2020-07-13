@@ -3,6 +3,7 @@ import time
 import copy
 import sqlite3
 import requests
+import sys
 import urllib.request
 import numpy as np
 import pandas as pd
@@ -10,15 +11,26 @@ from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.common.keys import Keys
 from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.options import Options
 from datetime import datetime
 
+def get_driver():
+    platforms = {
+        'linux' : './chromedriver',
+        'win32' : 'chromedriver.exe'
+    }
+    if sys.platform not in platforms:
+        return sys.platform
+    
+    return platforms[sys.platform]
+
 def get_href(url):
-    driver = webdriver.Chrome('./chromedriver')
+    options = Options()
+    options.headless = True
+    driver = webdriver.Chrome(get_driver())
     driver.get(url)
     print(str(url))
     visited_links.append(url)
-    for x in visited_links:
-        print(str(x))
     
     xpath = []
     links = []

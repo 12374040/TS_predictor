@@ -1,6 +1,7 @@
 import json
 import time
 import copy
+import sys
 import sqlite3
 import requests
 import urllib.request
@@ -10,6 +11,18 @@ from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from datetime import datetime
+
+
+
+def get_driver():
+    platforms = {
+        'linux' : './chromedriver',
+        'win32' : 'chromedriver.exe'
+    }
+    if sys.platform not in platforms:
+        return sys.platform
+    
+    return platforms[sys.platform]
 
 def scrape(links):
     data = []
@@ -41,7 +54,7 @@ def scrape(links):
 def links():
     options = Options()
     options.headless = True
-    driver = webdriver.Chrome('chromedriver.exe', options=options)
+    driver = webdriver.Chrome(get_driver(), options=options)
     driver.get('https://www.ticketswap.nl/festivals')
 
     while True:
@@ -99,7 +112,8 @@ def update_values(data):
     conn.commit()
     conn.close()
 
-
+driver = get_driver()
+print(driver)
 create()
 data = scrape(links())
 update_values(data)
