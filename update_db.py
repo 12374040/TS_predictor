@@ -12,8 +12,6 @@ from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from datetime import datetime
 
-
-
 def get_driver():
     platforms = {
         'linux' : './chromedriver',
@@ -40,7 +38,7 @@ def scrape(links):
 
         ticket_data['event_date'] = soup.findAll("div", {"class": "css-102v2t9 ey3w7ki1"})[0].text
         ticket_data['location'] = soup.findAll("div", {"class": "css-102v2t9 ey3w7ki1"})[1].text
-
+        ticket_data['facebook'] = soup.find("div", {"class": "css-1fwnys8 e1tolpgy2"}).find('a').get('href')
         data.append(ticket_data)
 
 
@@ -93,8 +91,9 @@ def create():
     conn = sqlite3.connect('test.db')
     c = conn.cursor()
     
-    hours = ", ".join(['hour'+str(i) + " int default 0" for i in range(24)])
-    c.execute("CREATE TABLE IF NOT EXISTS base (name varchar(255), event_date varchar(255), location varchar(255), aangeboden int, verkocht int, gezocht int, timestamp varchar(255));")
+    c.execute('''CREATE TABLE IF NOT EXISTS base (
+    name varchar(255), event_date varchar(255), location varchar(255), facebook varchar(255), aangeboden int, verkocht int, gezocht int, timestamp varchar(255)
+    );''')
     
     conn.commit()
     conn.close()
@@ -107,7 +106,7 @@ def update_values(data):
     c = conn.cursor()
     
     new_values = [tuple(row) for row in data.itertuples(index=False)]
-    c.executemany('INSERT INTO base (name, event_date, location, aangeboden, verkocht, gezocht, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?);', new_values)
+    c.executemany('INSERT INTO base (name, event_date, location, facebook, aangeboden, verkocht, gezocht, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?, ?);', new_values)
 
     conn.commit()
     conn.close()
