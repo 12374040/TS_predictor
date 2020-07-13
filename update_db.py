@@ -43,7 +43,6 @@ def scrape(links):
         event_date = soup.findAll("div", {"class": "css-102v2t9 ey3w7ki1"})[0].text
         
         ticket_data['event_date'] = event_date.split('}')[-1]
-        print(ticket_data['event_date'])
 
         ticket_data['location'] = soup.findAll("div", {"class": "css-102v2t9 ey3w7ki1"})[1].text
         try:
@@ -73,13 +72,13 @@ def links():
 
     time.sleep(5)
     
-    # while True:
-    #     try:
-    #         driver.find_element(By.XPATH, '//h4[text()="Laat meer zien"]').click() # click load more
-    #         time.sleep(1)
-    #     except:
-    #         print('no load more')
-    #         break
+    while True:
+        try:
+            driver.find_element(By.XPATH, '//h4[text()="Laat meer zien"]').click() # click load more
+            time.sleep(1)
+        except:
+            print('no load more')
+            break
 
 
     xpath.extend(driver.find_elements(By.XPATH, '//a'))
