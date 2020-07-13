@@ -13,5 +13,15 @@ def check_database():
 
     return df.head(50)
 
+def check_links():
+    conn = sqlite3.connect('links.db')
+    c = conn.cursor()
 
-print(check_database())
+    lf = pd.DataFrame(c.execute('SELECT * FROM base;'), columns=['link'])
+    conn.commit()
+    conn.close()
+
+    return lf.head(50)
+
+print(check_links())
+# print(check_database())

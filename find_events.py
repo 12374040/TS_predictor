@@ -27,11 +27,11 @@ def get_driver():
 def get_href(url):
     options = Options()
     options.headless = True
-    driver = webdriver.Chrome(get_driver())
+    driver = webdriver.Chrome(get_driver(), options=options)
     driver.get(url)
     print(str(url))
     visited_links.append(url)
-    
+    time.sleep(2)
     xpath = []
     links = []
     events = []
@@ -43,7 +43,7 @@ def get_href(url):
     
     try:
         driver.find_element(By.XPATH, '//h4[text()="Laat meer zien"]').click() # click load more
-        time.sleep(2)
+        time.sleep(1)
     except:
         print('no load more')
     
@@ -67,12 +67,36 @@ def get_href(url):
 
     return events
 
+def create_link_db():
+    conn = sqlite3.connect('links.db')
+    c = conn.cursor()
+    
+    
+    c.execute("CREATE TABLE IF NOT EXISTS base (link varchar(255));")
+    
+    conn.commit()
+    conn.close()
+
+def update_link_values(data): 
+    print('updating...')
+    conn = sqlite3.connect('links.db')
+    c = conn.cursor()
+    new_values =[tuple(x) for x in data]
+    for value in new_values:
+        c.executemany('INSERT INTO base (link) VALUES (?);', value)
+
+    conn.commit()
+    conn.close()
+
 event_links = []
 visited_links = []
+create_link_db()
 event_links = get_href('https://www.ticketswap.nl/')
 print('event links = ')
 for x in event_links:
     print(x)
+
+update_link_values(event_links)
 # TO_DO:
 # in een file zetten
 
