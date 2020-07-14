@@ -33,31 +33,32 @@ def scrape(links):
         soup = BeautifulSoup(request.text, features="html.parser")
 
         ticket_features = ['aangeboden', 'verkocht', 'gezocht' ]
-        ticket_soup = soup.find_all("span", { "class" : "css-v0hcsa e7cn512" })
-        ticket_data = {ticket_features[i] : ticket_soup[i].span.text for i in range(len(ticket_soup))}
+        ticket_soup = soup.find_all("span", { "class" : "css-v0hcsa e7cn512" }) 
+        ticket_data = {ticket_features[i] : int(ticket_soup[i].span.text) for i in range(len(ticket_soup))} # maakt een dict met 'aangeboden', 'verkocht', 'gezocht'
         
         event_soup = str(soup.find_all("script", { "type" : "application/ld+json"})[0].string)
         event_datapoint = json.loads(''.join([event_soup[i] for i in range(len(event_soup)) if event_soup[i] != "\n"]))
-        ticket_data['name'] = event_datapoint['itemListElement'][3]['item']['name']
+        ticket_data['name'] = event_datapoint['itemListElement'][3]['item']['name'] # voeg naam toe aan dict
         
         event_date = soup.findAll("div", {"class": "css-102v2t9 ey3w7ki1"})[0].text
-        
-        ticket_data['event_date'] = event_date.split('}')[-1]
-        print(ticket_data['event_date'])
+        ticket_data['event_date'] = event_date.split('}')[-1] # voeg event datum toe aan dict
 
-        ticket_data['location'] = soup.findAll("div", {"class": "css-102v2t9 ey3w7ki1"})[1].text
-        try:
+        ticket_data['location'] = soup.findAll("div", {"class": "css-102v2t9 ey3w7ki1"})[1].text # locatie
+
+        try: # voeg facebook link toe indien beschikbaar
             ticket_data['facebook'] = soup.find("div", {"class": "css-1fwnys8 e1tolpgy2"}).find('a').get('href')
         except:
             ticket_data['facebook'] = 'None'
-        ticket_data['link'] = link
+        
+        ticket_data['link'] = link # ticketswap link
+
         data.append(ticket_data)
 
 
-    df = pd.DataFrame(data).fillna(0)
-    df.loc[:, ['aangeboden', 'verkocht', 'gezocht']] = df.loc[:, ['aangeboden', 'verkocht', 'gezocht']].astype('int')
-    df['date'] = [datetime.now(tz=None).strftime("%Y/%m/%d %H:%M:%S") for i in range(len(df))]
-    
+    df = pd.DataFrame(data).fillna(0) # lijst van dicts naar dataframe
+
+    df['timestamp'] = [datetime.now(tz=None).strftime("%Y/%m/%d %H:%M:%S") for i in range(len(df))] # voeg het huidige tijdstip toe
+
     return df
 
 
@@ -71,19 +72,18 @@ def links():
     events = []
     is_event = '/event/'
 
-    time.sleep(5)
-    
-    # while True:
-    #     try:
-    #         driver.find_element(By.XPATH, '//h4[text()="Laat meer zien"]').click() # click load more
-    #         time.sleep(1)
-    #     except:
-    #         print('no load more')
-    #         break
+    t = 0
+    while True:
+        try:
+            driver.find_element(By.XPATH, '//h4[text()="Laat meer zien"]').click() # click load more
+            time.sleep(0.5)
+        except:
+            print('no load more')
+            break
 
 
     xpath.extend(driver.find_elements(By.XPATH, '//a'))
-    
+
     for x in xpath:
         links.append(str(x.get_attribute("href")))# append link to list
         # print(str(x.get_attribute("href")))
@@ -116,9 +116,10 @@ def update_values(data):
     print('updating...')
     conn = sqlite3.connect('test.db')
     c = conn.cursor()
-    
+
     new_values = [tuple(row) for row in data.itertuples(index=False)]
-    c.executemany('INSERT INTO base (name, event_date, location, facebook, link, aangeboden, verkocht, gezocht, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);', new_values)
+
+    c.executemany('INSERT INTO base (aangeboden, verkocht, gezocht, name, event_date, location, facebook, link, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);', new_values)
 
     conn.commit()
     conn.close()
