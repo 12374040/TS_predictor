@@ -14,9 +14,8 @@ from selenium.webdriver.common.by import By
 from datetime import datetime
 
 
-api_key = 'EAARj9Kx1ZCdIBAPQaszyaLc3kujJaZAHZCYSuXeZB1jjWCKswtkb3ZBtQ9QjpNdcOLZCHgklGT6YGHFTcuFdtZCecnRMVkBCKFcD5DZAPnfFchGDqRptFFImsjAQyGENSTAnNBs9apdwSnpikdehJnCCy6doORP3uCg860Nq4CzN0kIKFizJFdhzedXUI3Lab7ZBRZAEM3hZAR0vC4n01jayYAMwF5ElMrHtnGMOHV2e8POAgZDZD'
-
 def get_driver():
+    '''Detecteerd OS en past chromedriver aan'''
     platforms = {
         'linux' : './chromedriver',
         'win32' : 'chromedriver.exe'
@@ -27,42 +26,60 @@ def get_driver():
     return platforms[sys.platform]
 
 def scrape(links):
+    '''Haalt informatie uit evenementpagina's via URL'''
     data = []
     for link in links:
+        print(link)
         request = requests.get(link)
         soup = BeautifulSoup(request.text, features="html.parser")
 
-        ticket_features = ['aangeboden', 'verkocht', 'gezocht' ]
+        # maakt een dict aan voor de informatie uit de event page
+        datapoint = dict()
+
+        # voegt hoeveeheid aangeboden, gevraagde en verkochte tickets toe aan dict
         ticket_soup = soup.find_all("span", { "class" : "css-v0hcsa e7cn512" }) 
-        ticket_data = {ticket_features[i] : int(ticket_soup[i].span.text) for i in range(len(ticket_soup))} # maakt een dict met 'aangeboden', 'verkocht', 'gezocht'
+
+        for i, feature in enumerate(['aangeboden', 'verkocht', 'gezocht' ]):
+            try:
+                datapoint[feature] = int(ticket_soup[i].span.text)
+            except:
+                datapoint[feature] = np.nan
+
+        # voegt naam van event toe aan dict
+        event_json = str(soup.find_all("script", { "type" : "application/ld+json"})[0].string)
+        event_soup = json.loads(''.join([event_json[i] for i in range(len(event_json)) if event_json[i] != "\n"]))
+        datapoint['name'] = event_soup['itemListElement'][3]['item']['name']
         
-        event_soup = str(soup.find_all("script", { "type" : "application/ld+json"})[0].string)
-        event_datapoint = json.loads(''.join([event_soup[i] for i in range(len(event_soup)) if event_soup[i] != "\n"]))
-        ticket_data['name'] = event_datapoint['itemListElement'][3]['item']['name'] # voeg naam toe aan dict
-        
+        # voegt event datum toe aan dict
         event_date = soup.findAll("div", {"class": "css-102v2t9 ey3w7ki1"})[0].text
-        ticket_data['event_date'] = event_date.split('}')[-1] # voeg event datum toe aan dict
+        datapoint['event_date'] = event_date.split('}')[-1]
 
-        ticket_data['location'] = soup.findAll("div", {"class": "css-102v2t9 ey3w7ki1"})[1].text # locatie
+        # voegt locatie toe
+        datapoint['location'] = soup.findAll("div", {"class": "css-102v2t9 ey3w7ki1"})[1].text # locatie
 
-        try: # voeg facebook link toe indien beschikbaar
-            ticket_data['facebook'] = soup.find("div", {"class": "css-1fwnys8 e1tolpgy2"}).find('a').get('href')
+        # voegt facebook link toe indien beschikbaar
+        try:
+            datapoint['facebook'] = soup.find("div", {"class": "css-1fwnys8 e1tolpgy2"}).find('a').get('href')
         except:
-            ticket_data['facebook'] = 'None'
-        
-        ticket_data['link'] = link # ticketswap link
+            datapoint['facebook'] = 'None'
 
-        data.append(ticket_data)
+        # voegt ticketswap link toe
+        datapoint['link'] = link
 
 
-    df = pd.DataFrame(data).fillna(0) # lijst van dicts naar dataframe
+        data.append(datapoint)
 
-    df['timestamp'] = [datetime.now(tz=None).strftime("%Y/%m/%d %H:%M:%S") for i in range(len(df))] # voeg het huidige tijdstip toe
+    # zet lijst van dicts om naar dataframe
+    df = pd.DataFrame(data)
+
+    # voeg het huidige tijdstip toe aan df
+    df['timestamp'] = [datetime.now(tz=None).strftime("%Y/%m/%d %H:%M:%S") for i in range(len(df))] 
 
     return df
 
 
 def links():
+    '''Verzamelt links van de ticketswap festival pagina'''
     options = Options()
     options.headless = True
     driver = webdriver.Chrome(get_driver(), options=options)
@@ -72,26 +89,27 @@ def links():
     events = []
     is_event = '/event/'
 
-    t = 0
-    while True:
-        try:
-            driver.find_element(By.XPATH, '//h4[text()="Laat meer zien"]').click() # click load more
-            time.sleep(0.5)
-        except:
-            print('no load more')
-            break
+    # klikt op de 'laat meer zien' knop tot alle evenementen vertoond worden
+    #t = 0
+    #while True:
+    #    try:
+    #        driver.find_element(By.XPATH, '//h4[text()="Laat meer zien"]').click()
+    #        time.sleep(0.5)
+    #    except:
+    #        print('no load more')
+    #        break
 
 
+    # append alle links op pagina
     xpath.extend(driver.find_elements(By.XPATH, '//a'))
 
     for x in xpath:
-        links.append(str(x.get_attribute("href")))# append link to list
-        # print(str(x.get_attribute("href")))
-    # print('links = ' + str(links))
+        links.append(str(x.get_attribute("href")))# append link naar list
 
     driver.close()
+
+    # filtert op links die naar evenementpagina's verwijzen
     events = [x for x in links if is_event in x]
-    
     
     print('{} links found'.format(len(events)))
     print('scraping...')
@@ -100,11 +118,20 @@ def links():
 
 
 def create():
+    '''Create db if it does not exist yet'''
     conn = sqlite3.connect('test.db')
     c = conn.cursor()
     
     c.execute('''CREATE TABLE IF NOT EXISTS base (
-    name varchar(255), event_date varchar(255), location varchar(255), facebook varchar(255), link varchar(255), aangeboden int, verkocht int, gezocht int, timestamp varchar(255)
+    aangeboden int, 
+    verkocht int, 
+    gezocht int, 
+    name varchar(255), 
+    event_date varchar(255), 
+    location varchar(255), 
+    facebook varchar(255), 
+    link varchar(255),
+    timestamp varchar(255)
     );''')
     
     conn.commit()
@@ -113,6 +140,7 @@ def create():
 
 
 def update_values(data): 
+    '''Update db with scraped data'''
     print('updating...')
     conn = sqlite3.connect('test.db')
     c = conn.cursor()
