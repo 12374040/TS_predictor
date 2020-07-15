@@ -1,12 +1,17 @@
-import sqlite3
-import numpy
+import pyodbc
+import numpy as np
 import pandas as pd
 
-def check_database():
-    conn = sqlite3.connect('test.db')
-    c = conn.cursor()
+server = 'ticketscrape.database.windows.net'
+database = 'ts_db'
+username = 'data_admin'
+password = 'Kaasisbaas4'
+driver= '{ODBC Driver 17 for SQL Server}'
 
-    df = pd.DataFrame(c.execute('''
+def check_database():
+    conn = pyodbc.connect('DRIVER='+driver+';PORT=1433;SERVER='+server+';PORT=1443;DATABASE='+database+';UID='+username+';PWD='+ password)
+
+    df = pd.read_sql_query('''
     SELECT 
         name,
         aangeboden, 
@@ -18,34 +23,14 @@ def check_database():
         link, 
         timestamp 
     FROM 
-        base;
-    '''), columns = [
-        'name',
-        'aangeboden',
-        'verkocht',
-        'gezocht',
-        'event_date', 
-        'location', 
-        'facebook', 
-        'link',  
-        'timestamp'
-        ])
+        ticket_data;
+    ''', conn)
 
     df = df.sort_values(['name', 'timestamp'], ascending=[True, False])
+
     conn.commit()
     conn.close()
 
-    return df
+    return df.iloc[1, :]
 
-def check_links():
-    conn = sqlite3.connect('links.db')
-    c = conn.cursor()
-
-    lf = pd.DataFrame(c.execute('SELECT * FROM base;'), columns=['link'])
-    conn.commit()
-    conn.close()
-
-    return lf.head(50)
-
-#print(check_links())
 print(check_database())

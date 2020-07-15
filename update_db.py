@@ -2,6 +2,7 @@ import json
 import time
 import copy
 import sys
+import pyodbc
 import sqlite3
 import requests
 import urllib.request
@@ -13,6 +14,11 @@ from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
 from datetime import datetime
 
+server = 'ticketscrape.database.windows.net'
+database = 'ts_db'
+username = 'data_admin'
+password = 'Kaasisbaas4'
+driver = '{ODBC Driver 17 for SQL Server}'
 
 def get_driver():
     '''Detecteerd OS en past chromedriver aan'''
@@ -45,7 +51,7 @@ def scrape(links):
             try:
                 datapoint[feature] = int(ticket_soup[i].span.text)
             except:
-                datapoint[feature] = np.nan
+                datapoint[feature] = 0
 
         # voegt naam van event toe aan dict
         event_json = str(soup.find_all("script", { "type" : "application/ld+json"})[0].string)
@@ -87,8 +93,8 @@ def links():
     '''Verzamelt links van de ticketswap festival pagina'''
     options = Options()
     options.headless = True
-    driver = webdriver.Chrome(get_driver(), options=options)
-    driver.get('https://www.ticketswap.nl/festivals')
+    chromedriver = webdriver.Chrome(get_driver(), options=options)
+    chromedriver.get('https://www.ticketswap.nl/festivals')
     xpath = []
     links = []
     events = []
@@ -98,7 +104,7 @@ def links():
     #t = 0
     #while True:
     #    try:
-    #        driver.find_element(By.XPATH, '//h4[text()="Laat meer zien"]').click()
+    #        chromedriver.find_element(By.XPATH, '//h4[text()="Laat meer zien"]').click()
     #        time.sleep(0.5)
 
     #    except:
@@ -107,12 +113,12 @@ def links():
 
 
     # append alle links op pagina
-    xpath.extend(driver.find_elements(By.XPATH, '//a'))
+    xpath.extend(chromedriver.find_elements(By.XPATH, '//a'))
 
     for x in xpath:
         links.append(str(x.get_attribute("href")))# append link naar list
 
-    driver.close()
+    chromedriver.close()
 
     # filtert op links die naar evenementpagina's verwijzen
     events = [x for x in links if is_event in x]
@@ -126,11 +132,11 @@ def links():
 
 
 def create():
-    '''Create db if it does not exist yet'''
-    conn = sqlite3.connect('test.db')
+    conn = pyodbc.connect('DRIVER='+driver+';PORT=1433;SERVER='+server+';PORT=1443;DATABASE='+database+';UID='+username+';PWD='+ password)
     c = conn.cursor()
-    
-    c.execute('''CREATE TABLE IF NOT EXISTS base (
+
+    c.execute('''IF OBJECT_ID('dbo.ticket_data', 'U') IS NULL
+    CREATE TABLE ticket_data (
     aangeboden int, 
     verkocht int, 
     gezocht int, 
@@ -150,18 +156,15 @@ def create():
 def update_values(data): 
     '''Update db with scraped data'''
     print('updating...')
-    conn = sqlite3.connect('test.db')
+    conn = pyodbc.connect('DRIVER='+driver+';PORT=1433;SERVER='+server+';PORT=1443;DATABASE='+database+';UID='+username+';PWD='+ password)
     c = conn.cursor()
 
     new_values = [tuple(row) for row in data.itertuples(index=False)]
-
-    c.executemany('INSERT INTO base (aangeboden, verkocht, gezocht, name, event_date, location, facebook, link, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);', new_values)
+    c.executemany('INSERT INTO ticket_data (aangeboden, verkocht, gezocht, name, event_date, location, facebook, link, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);', new_values)
 
     conn.commit()
     conn.close()
 
-driver = get_driver()
-print(driver)
-create()
 data = scrape(links())
+create()
 update_values(data)
