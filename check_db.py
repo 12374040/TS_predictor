@@ -5,7 +5,7 @@ from database import *
 
 
 def check_database():
-    conn = pyodbc.connect('DRIVER={};PORT=1433;SERVER={};PORT=1443;DATABASE={};UID={};PWD={}'.format(*access))
+    conn = pyodbc.connect(access)
 
     df = pd.read_sql_query('''
     SELECT 

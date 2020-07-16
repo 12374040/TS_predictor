@@ -7,7 +7,7 @@ def update_database(data):
     '''Update db with scraped data'''
     print('updating...')
 
-    conn = pyodbc.connect('DRIVER={};PORT=1433;SERVER={};PORT=1443;DATABASE={};UID={};PWD={}'.format(*access))
+    conn = pyodbc.connect(access)
     c = conn.cursor()
 
     # create table if not exists
