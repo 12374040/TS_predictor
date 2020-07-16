@@ -1,27 +1,32 @@
-import sqlite3
-import numpy
+import pyodbc
+import numpy as np
 import pandas as pd
+from database import *
+
 
 def check_database():
-    conn = sqlite3.connect('test.db')
-    c = conn.cursor()
+    conn = pyodbc.connect('DRIVER={};PORT=1433;SERVER={};PORT=1443;DATABASE={};UID={};PWD={}'.format(*access))
 
-    df = pd.DataFrame(c.execute('SELECT * FROM base;'), columns=['name', 'event_date', 'location', 'facebook', 'link', 'aangeboden', 'gezocht', 'verkocht', 'timestamp'])
+    df = pd.read_sql_query('''
+    SELECT 
+        name,
+        aangeboden, 
+        verkocht, 
+        gezocht,
+        event_date, 
+        location, 
+        facebook, 
+        link, 
+        timestamp 
+    FROM 
+        ticket_data;
+    ''', conn)
+
+    conn.commit()
+    conn.close()
+
     df = df.sort_values(['name', 'timestamp'], ascending=[True, False])
-    conn.commit()
-    conn.close()
 
-    return df
+    return print(df.iloc[0, :])
 
-def check_links():
-    conn = sqlite3.connect('links.db')
-    c = conn.cursor()
-
-    lf = pd.DataFrame(c.execute('SELECT * FROM base;'), columns=['link'])
-    conn.commit()
-    conn.close()
-
-    return lf.head(50)
-
-#print(check_links())
-print(check_database())
+check_database()
