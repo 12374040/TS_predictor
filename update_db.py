@@ -1,24 +1,17 @@
 import json
 import time
-import copy
 import sys
 import pyodbc
-import sqlite3
 import requests
 import urllib.request
 import numpy as np
 import pandas as pd
+from datetime import datetime
 from bs4 import BeautifulSoup
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
-from datetime import datetime
-
-server = 'ticketscrape.database.windows.net'
-database = 'ts_db'
-username = 'data_admin'
-password = 'Kaasisbaas4'
-driver = '{ODBC Driver 17 for SQL Server}'
+from database import *
 
 def get_driver():
     '''Detecteerd OS en past chromedriver aan'''
@@ -132,7 +125,7 @@ def links():
 
 
 def create():
-    conn = pyodbc.connect('DRIVER='+driver+';PORT=1433;SERVER='+server+';PORT=1443;DATABASE='+database+';UID='+username+';PWD='+ password)
+    conn = pyodbc.connect('DRIVER={};PORT=1433;SERVER={};PORT=1443;DATABASE={};UID={};PWD={}'.format(driver, server, database, username, password))
     c = conn.cursor()
 
     c.execute('''IF OBJECT_ID('dbo.ticket_data', 'U') IS NULL
@@ -156,7 +149,7 @@ def create():
 def update_values(data): 
     '''Update db with scraped data'''
     print('updating...')
-    conn = pyodbc.connect('DRIVER='+driver+';PORT=1433;SERVER='+server+';PORT=1443;DATABASE='+database+';UID='+username+';PWD='+ password)
+    conn = pyodbc.connect('DRIVER={};PORT=1433;SERVER={};PORT=1443;DATABASE={};UID={};PWD={}'.format(driver, server, database, username, password))
     c = conn.cursor()
 
     new_values = [tuple(row) for row in data.itertuples(index=False)]

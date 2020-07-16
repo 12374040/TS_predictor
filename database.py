@@ -1,0 +1,5 @@
+server = 'ticketscrape.database.windows.net'
+database = 'ts_db'
+username = 'data_admin'
+password = 'Kaasisbaas4'
+driver = '{ODBC Driver 17 for SQL Server}'
