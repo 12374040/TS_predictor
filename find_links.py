@@ -26,7 +26,7 @@ def links():
     events = []
     is_event = '/event/'
 
-    time.sleep(2)
+
     # klikt op de 'laat meer zien' knop tot alle evenementen vertoond worden
     t = 0
     while True:
