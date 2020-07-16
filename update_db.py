@@ -18,7 +18,9 @@ def update_database(data):
     gezocht int, 
     name varchar(255), 
     event_date varchar(255), 
-    location varchar(255), 
+    location varchar(255),
+    city varchar(255),
+    country varchar(255),
     facebook varchar(255), 
     link varchar(255),
     timestamp varchar(255)
@@ -26,7 +28,20 @@ def update_database(data):
     
     # update table
     new_values = [tuple(row) for row in data.itertuples(index=False)]
-    c.executemany('INSERT INTO ticket_data (aangeboden, verkocht, gezocht, name, event_date, location, facebook, link, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);', new_values)
+    c.executemany('''INSERT INTO ticket_data (
+                                        name,
+                                        aangeboden, 
+                                        verkocht, 
+                                        gezocht, 
+                                        event_date, 
+                                        location, 
+                                        city,
+                                        country,
+                                        facebook, 
+                                        link, 
+                                        timestamp) 
+                                    VALUES 
+                                        (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);''', new_values)
 
     conn.commit()
     conn.close()

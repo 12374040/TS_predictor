@@ -1,4 +1,5 @@
 import sys
+import time
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
@@ -25,13 +26,13 @@ def links():
     events = []
     is_event = '/event/'
 
+    time.sleep(2)
     # klikt op de 'laat meer zien' knop tot alle evenementen vertoond worden
     t = 0
     while True:
         try:
             chromedriver.find_element(By.XPATH, '//h4[text()="Laat meer zien"]').click()
             time.sleep(0.5)
-
         except:
             break
 

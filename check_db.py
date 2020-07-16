@@ -14,7 +14,9 @@ def check_database():
         verkocht, 
         gezocht,
         event_date, 
-        location, 
+        location,
+        city,
+        country,
         facebook, 
         link, 
         timestamp 
@@ -27,6 +29,6 @@ def check_database():
 
     df = df.sort_values(['name', 'timestamp'], ascending=[True, False])
 
-    return print(df.iloc[0, :])
+    return print(df)
 
 check_database()
