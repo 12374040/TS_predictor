@@ -11,7 +11,7 @@ def scrape(links):
     data = []
     timestamp = datetime.now(tz=None).strftime("%Y/%m/%d %H:%M:%S")
 
-    for link in links:
+    for link in list(set(links)):
         print(link)
         doc = lxml.html.fromstring(requests.get(link).content)
 
