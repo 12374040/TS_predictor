@@ -33,12 +33,12 @@ def links():
 
     # klikt op de 'laat meer zien' knop tot alle evenementen vertoond worden
     t = 0
-    while True:
-        try:
-            chromedriver.find_element(By.XPATH, '//h4[text()="Laat meer zien"]').click()
-            time.sleep(0.5)
-        except:
-            break
+    # while True:
+    #     try:
+    #         chromedriver.find_element(By.XPATH, '//h4[text()="Laat meer zien"]').click()
+    #         time.sleep(0.5)
+    #     except:
+    #         break
 
 
     # append alle links op pagina
@@ -57,15 +57,28 @@ def links():
     get_link_data(events)
 
 def get_link_data(links):
-    link = []
+    link_list = []
 
     for link in list(set(links)):
         print(link)
         doc = lxml.html.fromstring(requests.get(link).content)
 
-        link_data = dict()
+        link_data = {
+            'name':'',
+            'event_date':'',
+            'location':'',
+            'city':'',
+            'country':'',
+            'facebook':'',
+            'link':''
+        }
         link_data['name'] = doc.xpath('//*[@id="__next"]/div[1]/div[1]/div[2]/a/h1/text()')[0]
-
+        try:
+            doc.xpath('//*[@id="__next"]/div[1]/div[1]/div[2]/div[2]/div[3]/span/span[1]/text()')[0]
+        except:
+            print(link + ':data not found!')
+            continue
+        
         link_data['event_date'] = doc.xpath('//*[@id="__next"]/div[1]/div[1]/div[2]/div[3]/div[1]/text()')[0]
         link_data['location'] = doc.xpath('//*[@id="__next"]/div[1]/div[1]/div[2]/div[3]/div[2]/span[2]/a[1]/text()')[0]
         link_data['city'] = doc.xpath('//*[@id="__next"]/div[1]/div[1]/div[2]/div[3]/div[2]/span[2]/a[2]/text()')[0]
@@ -78,7 +91,7 @@ def get_link_data(links):
 
         link_data['link'] = link
 
-        link.append(link_data)
+        link_list.append(link_data)
 
-    link = pd.DataFrame(link)
-    update_links(link)
+    link_list = pd.DataFrame(link_list)
+    update_links(link_list)
