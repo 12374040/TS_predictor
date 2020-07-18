@@ -7,10 +7,10 @@ import numpy as np
 import pandas as pd
 
 # fetch list of links to scrape
-links = links()
+links()
 
 # append data from pages
-data = scrape(links)
+data = scrape()
 
 # update database
 update_database(data)
