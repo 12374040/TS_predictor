@@ -1,5 +1,9 @@
 import sys
 import time
+import requests
+import lxml.html
+from update_db import update_links
+import pandas as pd
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
@@ -49,5 +53,32 @@ def links():
     events = [x for x in links if is_event in x]
     
     print('{} links found'.format(len(events)))
-    print('scraping...')
-    return events
+    
+    get_link_data(events)
+
+def get_link_data(links):
+    link = []
+
+    for link in list(set(links)):
+        print(link)
+        doc = lxml.html.fromstring(requests.get(link).content)
+
+        link_data = dict()
+        link_data['name'] = doc.xpath('//*[@id="__next"]/div[1]/div[1]/div[2]/a/h1/text()')[0]
+
+        link_data['event_date'] = doc.xpath('//*[@id="__next"]/div[1]/div[1]/div[2]/div[3]/div[1]/text()')[0]
+        link_data['location'] = doc.xpath('//*[@id="__next"]/div[1]/div[1]/div[2]/div[3]/div[2]/span[2]/a[1]/text()')[0]
+        link_data['city'] = doc.xpath('//*[@id="__next"]/div[1]/div[1]/div[2]/div[3]/div[2]/span[2]/a[2]/text()')[0]
+        link_data['country'] = doc.xpath('//*[@id="__next"]/div[1]/div[1]/div[2]/div[3]/div[2]/span[2]/text()[2]')[0][2:]
+
+        try:
+            link_data['facebook'] = doc.xpath('//*[@id="__next"]/div[1]/div[1]/div[2]/div[1]/div/a')[0].get("href")
+        except:
+            link_data['facebook'] = 'Nan'
+
+        link_data['link'] = link
+
+        link.append(link_data)
+
+    link = pd.DataFrame(link)
+    update_links(link)
