@@ -13,7 +13,7 @@ def update_database(data):
     conn = mysql.connector.connect(**access)
     
     
-    c = conn.cursor()
+    c = conn.cursor(buffered=True)
 
     # create table if not exists
     # c.execute('''CREATE TABLE IF NOT EXISTS ticket_data (
@@ -27,19 +27,29 @@ def update_database(data):
     
     # update table
     new_values = [tuple(row) for row in data.itertuples(index=False)]
-    print(len(new_values))
+    
     limit = len(new_values)
     # check if the entry will be different from the last
     c.execute('''SELECT ID, aangeboden, verkocht, gezocht, laagste_prijs
                 FROM ticket_data
                     ORDER BY timestamp DESC
-                    LIMIT %s''', (limit,)) # zou beter zijn als er per ID gekeken wordt naar de nieuwste entry maar weet niet hoe dat moet....
+                    LIMIT %s''', (limit,)) 
     old_values = [tuple(row) for row in c]
-    print('old_values')
-    print(old_values)
+    
+
     values_to_add = [tuple(row) for row in new_values if row not in old_values]
     print('values to add')
     print(values_to_add)
+
+    values_to_update = [row[0] for row in new_values if row in old_values] # for setting all unchanged last values to the current timestamp
+    time_list = [timestamp] * len(values_to_update)
+    
+    c.execute('SELECT timestamp FROM ticket_data ORDER BY timestamp DESC LIMIT 1')
+    last_timestamp = [row for row in c]
+    last_time_list = [last_timestamp[0][0]] * len(values_to_update)
+    
+    data_timestamp = list(zip(time_list,values_to_update, last_time_list))# combining 3 lists to tuple list
+    
     c.executemany('''INSERT INTO ticket_data (
                                         ID,
                                         aangeboden, 
@@ -48,8 +58,8 @@ def update_database(data):
                                         laagste_prijs) 
                                     VALUES 
                                         (%s, %s, %s, %s, %s);''', values_to_add)
-    c.execute('UPDATE ticket_data SET timestamp = %s WHERE timestamp IS NULL;', (timestamp,))
-
+    c.execute('UPDATE ticket_data SET timestamp = %s WHERE timestamp IS NULL;', (timestamp,))# set timestamp for added values
+    c.executemany('UPDATE ticket_data SET timestamp = %s WHERE ID = %s AND timestamp = %s', (data_timestamp)) # set all unchanged last vcalues to current timestamp
     conn.commit()
     conn.close()
 

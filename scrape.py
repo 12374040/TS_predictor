@@ -32,10 +32,11 @@ def scrape():
             event_data['verkocht'] = int(doc.xpath('//*[@id="__next"]/div[1]/div[1]/div[2]/div[2]/div[2]/span/span[1]/text()')[0])
             event_data['gezocht'] = int(doc.xpath('//*[@id="__next"]/div[1]/div[1]/div[2]/div[2]/div[3]/span/span[1]/text()')[0])
         except:
-            print(link + ':data not found!')
+            print(link)
+            print(':data not found!')
             continue
         
-        if event_data['aangeboden'] is not 0:
+        if event_data['aangeboden'] != 0:
             try:
                 event_data['laagste_prijs'] = (doc.xpath('/html/body/div[1]/div[2]/div[2]/ul/li[1]/a/div/div/div/footer/strong/text()')[0])
             except:
