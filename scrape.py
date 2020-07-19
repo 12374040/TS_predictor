@@ -10,13 +10,14 @@ from find_links import *
 from database import *
 
 def scrape():
+    print('Scraping...')
     data = []
     timestamp = datetime.now(tz=None).strftime("%Y/%m/%d %H:%M:%S")
 
     conn = mysql.connector.connect(**access)
     c = conn.cursor()
 
-    c.execute('SELECT link FROM link_data')
+    c.execute('SELECT link,ID FROM link_data')
     link_to_check = [row for row in c]
     print(link_to_check)
     for link in link_to_check:
@@ -24,7 +25,7 @@ def scrape():
         doc = lxml.html.fromstring(requests.get(go_link).content)
 
         event_data = dict()
-        event_data['name'] = doc.xpath('//*[@id="__next"]/div[1]/div[1]/div[2]/a/h1/text()')[0]
+        event_data['ID'] = link[1]
 
         try:
             event_data['aangeboden'] = int(doc.xpath('//*[@id="__next"]/div[1]/div[1]/div[2]/div[2]/div[1]/span/span[1]/text()')[0])
@@ -33,8 +34,6 @@ def scrape():
         except:
             print(link + ':data not found!')
             continue
-
-        event_data['event_date'] = doc.xpath('//*[@id="__next"]/div[1]/div[1]/div[2]/div[3]/div[1]/text()')[0]
         
         event_data['timestamp'] = timestamp
 

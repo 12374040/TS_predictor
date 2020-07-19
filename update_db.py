@@ -14,25 +14,23 @@ def update_database(data):
 
     # create table if not exists
     # c.execute('''CREATE TABLE IF NOT EXISTS ticket_data (
-    # name varchar(255),
+    # ID int,
     # aangeboden int, 
     # verkocht int, 
     # gezocht int, 
-    # event_date varchar(255), 
     # timestamp varchar(255)
     # );''')
     
     # update table
     new_values = [tuple(row) for row in data.itertuples(index=False)]
     c.executemany('''INSERT INTO ticket_data (
-                                        name,
+                                        ID,
                                         aangeboden, 
                                         verkocht, 
                                         gezocht, 
-                                        event_date, 
                                         timestamp) 
                                     VALUES 
-                                        (%s, %s, %s, %s, %s, %s);''', new_values)
+                                        (%s, %s, %s, %s, %s);''', new_values)
 
     conn.commit()
     conn.close()
@@ -45,22 +43,26 @@ def update_links(links):
     c = conn.cursor()
 
     # c.execute('''CREATE TABLE IF NOT EXISTS link_data (
+    # ID int NOT NULL AUTO_INCREMENT,
     # name varchar(255),
     # event_date varchar(255),
     # location varchar(255),
     # city varchar(255),
     # country varchar(255),
     # facebook varchar(255), 
-    # link varchar(255)
+    # link varchar(255),
+    # PRIMARY KEY (ID)
     # );''')
 
     # update table
     new_links = [tuple(row) for row in links.itertuples(index=False)]
 
-    c.execute('''SELECT * FROM link_data''')
+    c.execute('''SELECT name, event_date, location, city, country,facebook, link FROM link_data''')
     old_links = [tuple(row) for row in c]
-
+    print('old links')
+    print(old_links)
     links_to_add = [tuple(row) for row in new_links if row not in old_links]
+    print('links to add')
     print(links_to_add)
     # add new links to table
     c.executemany('''INSERT INTO link_data (

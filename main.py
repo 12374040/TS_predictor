@@ -7,7 +7,7 @@ import numpy as np
 import pandas as pd
 
 # fetch list of links to scrape
-links()
+# links()
 
 # append data from pages
 data = scrape()
