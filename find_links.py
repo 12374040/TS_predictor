@@ -33,12 +33,12 @@ def links():
 
     # klikt op de 'laat meer zien' knop tot alle evenementen vertoond worden
     t = 0
-    # while True:
-    #     try:
-    #         chromedriver.find_element(By.XPATH, '//h4[text()="Laat meer zien"]').click()
-    #         time.sleep(0.5)
-    #     except:
-    #         break
+    while True:
+        try:
+            chromedriver.find_element(By.XPATH, '//h4[text()="Laat meer zien"]').click()
+            time.sleep(0.5)
+        except:
+            break
 
 
     # append alle links op pagina
@@ -60,7 +60,7 @@ def get_link_data(links):
     link_list = []
 
     for link in list(set(links)):
-        print(link)
+        
         doc = lxml.html.fromstring(requests.get(link).content)
 
         link_data = {
