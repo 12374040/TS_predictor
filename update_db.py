@@ -1,11 +1,14 @@
 import mysql.connector
 import numpy as np
 import pandas as pd
+import time
+from datetime import datetime
 from database import *
 
 def update_database(data): 
     '''Update db with scraped data'''
     print('updating...')
+    timestamp = datetime.now(tz=None).strftime("%Y/%m/%d %H:%M:%S")
 
     conn = mysql.connector.connect(**access)
     
@@ -24,15 +27,30 @@ def update_database(data):
     
     # update table
     new_values = [tuple(row) for row in data.itertuples(index=False)]
+    print(len(new_values))
+    limit = len(new_values)
+    # check if the entry will be different from the last
+    c.execute('''SELECT ID, aangeboden, verkocht, gezocht, laagste_prijs
+                FROM ticket_data WHERE timestamp IN (
+                    SELECT timestamp
+                    FROM ticket_data
+                    ORDER BY timestamp DESC)
+                    LIMIT %s''', (limit,))
+    old_values = [tuple(row) for row in c]
+    print('old_values')
+    print(old_values)
+    values_to_add = [tuple(row) for row in new_values if row not in old_values]
+    print('values to add')
+    print(values_to_add)
     c.executemany('''INSERT INTO ticket_data (
                                         ID,
                                         aangeboden, 
                                         verkocht, 
                                         gezocht, 
-                                        laagste_prijs,
-                                        timestamp) 
+                                        laagste_prijs) 
                                     VALUES 
-                                        (%s, %s, %s, %s, %s, %s);''', new_values)
+                                        (%s, %s, %s, %s, %s);''', values_to_add)
+    c.execute('UPDATE ticket_data SET timestamp = %s WHERE timestamp IS NULL;', (timestamp,))
 
     conn.commit()
     conn.close()

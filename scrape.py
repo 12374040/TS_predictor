@@ -12,17 +12,16 @@ from database import *
 def scrape():
     print('Scraping...')
     data = []
-    timestamp = datetime.now(tz=None).strftime("%Y/%m/%d %H:%M:%S")
+    # timestamp = datetime.now(tz=None).strftime("%Y/%m/%d %H:%M:%S")
 
     conn = mysql.connector.connect(**access)
     c = conn.cursor()
 
     c.execute('SELECT link,ID FROM link_data')
     link_to_check = [row for row in c]
-    print(link_to_check)
+    
     for link in link_to_check:
         go_link = link[0]
-        print(go_link)
         doc = lxml.html.fromstring(requests.get(go_link).content)
 
         event_data = dict()
@@ -39,16 +38,13 @@ def scrape():
         if event_data['aangeboden'] is not 0:
             try:
                 event_data['laagste_prijs'] = (doc.xpath('/html/body/div[1]/div[2]/div[2]/ul/li[1]/a/div/div/div/footer/strong/text()')[0])
-                print(doc.xpath('/html/body/div[1]/div[2]/div[2]/ul/li[1]/a/div/div/div/footer/strong/text()')[0])
             except:
                 event_data['laagste_prijs'] = 'NaN'
-                print(link)
-                print(': price info not available')
         else:
             event_data['laagste_prijs'] = '0'
-            print('0 tickets available')
-        event_data['timestamp'] = timestamp
-
+        
+        # event_data['timestamp'] = timestamp
+        
         data.append(event_data)
 
     data = pd.DataFrame(data)
