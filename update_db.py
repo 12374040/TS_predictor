@@ -31,11 +31,9 @@ def update_database(data):
     limit = len(new_values)
     # check if the entry will be different from the last
     c.execute('''SELECT ID, aangeboden, verkocht, gezocht, laagste_prijs
-                FROM ticket_data WHERE timestamp IN (
-                    SELECT timestamp
-                    FROM ticket_data
-                    ORDER BY timestamp DESC)
-                    LIMIT %s''', (limit,))
+                FROM ticket_data
+                    ORDER BY timestamp DESC
+                    LIMIT %s''', (limit,)) # zou beter zijn als er per ID gekeken wordt naar de nieuwste entry maar weet niet hoe dat moet....
     old_values = [tuple(row) for row in c]
     print('old_values')
     print(old_values)
