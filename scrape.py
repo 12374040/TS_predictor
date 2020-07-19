@@ -22,6 +22,7 @@ def scrape():
     print(link_to_check)
     for link in link_to_check:
         go_link = link[0]
+        print(go_link)
         doc = lxml.html.fromstring(requests.get(go_link).content)
 
         event_data = dict()
@@ -35,6 +36,17 @@ def scrape():
             print(link + ':data not found!')
             continue
         
+        if event_data['aangeboden'] is not 0:
+            try:
+                event_data['laagste_prijs'] = (doc.xpath('/html/body/div[1]/div[2]/div[2]/ul/li[1]/a/div/div/div/footer/strong/text()')[0])
+                print(doc.xpath('/html/body/div[1]/div[2]/div[2]/ul/li[1]/a/div/div/div/footer/strong/text()')[0])
+            except:
+                event_data['laagste_prijs'] = 'NaN'
+                print(link)
+                print(': price info not available')
+        else:
+            event_data['laagste_prijs'] = '0'
+            print('0 tickets available')
         event_data['timestamp'] = timestamp
 
         data.append(event_data)

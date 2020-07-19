@@ -17,7 +17,8 @@ def update_database(data):
     # ID int,
     # aangeboden int, 
     # verkocht int, 
-    # gezocht int, 
+    # gezocht int,
+    # laagste_prijs varchar(255),
     # timestamp varchar(255)
     # );''')
     
@@ -28,9 +29,10 @@ def update_database(data):
                                         aangeboden, 
                                         verkocht, 
                                         gezocht, 
+                                        laagste_prijs,
                                         timestamp) 
                                     VALUES 
-                                        (%s, %s, %s, %s, %s);''', new_values)
+                                        (%s, %s, %s, %s, %s, %s);''', new_values)
 
     conn.commit()
     conn.close()
