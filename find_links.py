@@ -19,7 +19,7 @@ def get_driver():
     
     return platforms[sys.platform]
 
-def links(url):
+def gather_links(url):
     '''Verzamelt links van de ticketswap festival pagina'''
     options = Options()
     options.headless = True
@@ -27,6 +27,7 @@ def links(url):
     chromedriver.get(url)
     xpath = []
     links = []
+    visited_links = []
     events = []
     is_event = '/event/'
 
@@ -94,7 +95,8 @@ def get_link_data(links):
             except:
                 print('now it is a hub')
                 print(link)
-                links(go_link)
+                
+                gather_links(link)
             # print('hub event page')
             # print(link)
         
