@@ -1,7 +1,8 @@
-access = '''DRIVER={ODBC Driver 17 for SQL Server};
-PORT=1433;
-SERVER=ticketscrape.database.windows.net;
-PORT=1443;
-DATABASE=ts_db;
-UID=data_admin;
-PWD=Kaasisbaas4'''
+access = {
+    'user': 'root',
+    'password': 'password',
+    'host': '192.168.178.66',
+    'port': '3306',
+    'database': 'ticket_track',
+    'raise_on_warnings': True
+}
