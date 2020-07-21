@@ -9,7 +9,7 @@ from find_links import *
 
 def scrape(links):
     data = []
-    timestamp = datetime.now(tz=None).strftime("%Y/%m/%d %H:%M:%S")
+    timestamp = datetime.now(tz=None).strftime("%Y-%m-%d %H:%M:%S")
 
     for link in list(set(links)):
         print(link)

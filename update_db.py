@@ -23,7 +23,7 @@ def update_database(data):
     country varchar(255),
     facebook varchar(255), 
     link varchar(255),
-    timestamp varchar(255)
+    timestamp datetime
     );''')
     
     # update table

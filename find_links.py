@@ -28,13 +28,13 @@ def links():
 
 
     # klikt op de 'laat meer zien' knop tot alle evenementen vertoond worden
-    t = 0
-    while True:
-        try:
-            chromedriver.find_element(By.XPATH, '//h4[text()="Laat meer zien"]').click()
-            time.sleep(0.5)
-        except:
-            break
+    #t = 0
+    #while True:
+    #    try:
+    #        chromedriver.find_element(By.XPATH, '//h4[text()="Laat meer zien"]').click()
+    #        time.sleep(0.5)
+    #    except:
+    #        break
 
 
     # append alle links op pagina
