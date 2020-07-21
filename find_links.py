@@ -7,6 +7,7 @@ import pandas as pd
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
+from main import visited_links
 
 def get_driver():
     '''Detecteerd OS en past chromedriver aan'''
@@ -25,9 +26,9 @@ def gather_links(url):
     options.headless = True
     chromedriver = webdriver.Chrome(get_driver(), options=options)
     chromedriver.get(url)
+    visited_links.append(url)
     xpath = []
     links = []
-    visited_links = []
     events = []
     is_event = '/event/'
 
@@ -50,7 +51,7 @@ def gather_links(url):
     chromedriver.close()
 
     # filtert op links die naar evenementpagina's verwijzen
-    events = [x for x in links if is_event in x]
+    events = [x for x in links if is_event in x and x not in visited_links]
     
     print('{} links found'.format(len(events)))
     
