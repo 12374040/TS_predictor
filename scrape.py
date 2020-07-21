@@ -17,7 +17,7 @@ def scrape():
     conn = mysql.connector.connect(**access)
     c = conn.cursor()
 
-    c.execute('SELECT link,ID FROM link_data')
+    c.execute('SELECT link,ID FROM link_data')# TODO add it so that it doesnt search links that have past
     link_to_check = [row for row in c]
     
     for link in link_to_check:
@@ -42,7 +42,13 @@ def scrape():
             except:
                 event_data['laagste_prijs'] = 'NaN'
         else:
-            event_data['laagste_prijs'] = '0'
+            try:
+                event_data['laagste_prijs'] = (doc.xpath('/html/body/div/div[2]/div[2]/ul/li[1]/a/div/div/div/footer/strong/text()')[0])
+            except:
+                print('not able to get price of last sold ticket')
+                print(go_link)
+                event_data['laagste_prijs'] = '0'
+            
         
         # event_data['timestamp'] = timestamp
         

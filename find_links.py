@@ -19,12 +19,12 @@ def get_driver():
     
     return platforms[sys.platform]
 
-def links():
+def links(url):
     '''Verzamelt links van de ticketswap festival pagina'''
     options = Options()
     options.headless = True
     chromedriver = webdriver.Chrome(get_driver(), options=options)
-    chromedriver.get('https://www.ticketswap.nl/festivals')
+    chromedriver.get(url)
     xpath = []
     links = []
     events = []
@@ -82,7 +82,22 @@ def get_link_data(links):
         link_data['location'] = doc.xpath('//*[@id="__next"]/div[1]/div[1]/div[2]/div[3]/div[2]/span[2]/a[1]/text()')[0]
         link_data['city'] = doc.xpath('//*[@id="__next"]/div[1]/div[1]/div[2]/div[3]/div[2]/span[2]/a[2]/text()')[0]
         link_data['country'] = doc.xpath('//*[@id="__next"]/div[1]/div[1]/div[2]/div[3]/div[2]/span[2]/text()[2]')[0][2:]
-
+        try:
+            
+            print(doc.xpath('/html/body/div[1]/div[2]/div[2]/ul/li[1]/a/div/div/div/footer/strong/text()')[0])
+            print('nononono hub event page')
+            print(link)
+        except:
+            try:
+                print(doc.xpath('/html/body/div/div[2]/div[2]/ul/li[1]/a/div/div/div/footer/strong/text()')[0])
+                print('still no hub event page')
+            except:
+                print('now it is a hub')
+                print(link)
+                links(link)
+            # print('hub event page')
+            # print(link)
+        
         try:
             link_data['facebook'] = doc.xpath('//*[@id="__next"]/div[1]/div[1]/div[2]/div[1]/div/a')[0].get("href")
         except:
@@ -93,4 +108,4 @@ def get_link_data(links):
         link_list.append(link_data)
 
     link_list = pd.DataFrame(link_list)
-    update_links(link_list)
+    # update_links(link_list)

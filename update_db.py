@@ -42,6 +42,9 @@ def update_database(data):
     print(values_to_add)
 
     values_to_update = [row[0] for row in new_values if row in old_values] # for setting all unchanged last values to the current timestamp
+    print('values to update')
+    print(values_to_update)
+    
     time_list = [timestamp] * len(values_to_update)
     
     c.execute('SELECT timestamp FROM ticket_data ORDER BY timestamp DESC LIMIT 1')
@@ -85,7 +88,7 @@ def update_links(links):
     # update table
     new_links = [tuple(row) for row in links.itertuples(index=False)]
 
-    c.execute('''SELECT name, event_date, location, city, country,facebook, link FROM link_data''')
+    c.execute('''SELECT name, event_date, location, city, country, facebook, link FROM link_data''')
     old_links = [tuple(row) for row in c]
     print('old links')
     print(old_links)
