@@ -94,7 +94,7 @@ def get_link_data(links):
             except:
                 print('now it is a hub')
                 print(link)
-                links(link)
+                links(go_link)
             # print('hub event page')
             # print(link)
         

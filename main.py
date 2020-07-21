@@ -7,11 +7,11 @@ import numpy as np
 import pandas as pd
 
 # fetch list of links to scrape
-# beginurl = 'https://www.ticketswap.nl/festivals'
-# links(beginurl)
+beginurl = 'https://www.ticketswap.nl/festivals'
+links(beginurl)
 
 # append data from pages
 data = scrape()
 
-# # update database
-# update_database(data)
+# update database
+update_database(data)
