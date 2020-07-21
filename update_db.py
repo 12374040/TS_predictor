@@ -1,163 +1,111 @@
-import json
-import time
-import sys
-import pyodbc
-import requests
-import urllib.request
+import mysql.connector
 import numpy as np
 import pandas as pd
+import time
 from datetime import datetime
-from bs4 import BeautifulSoup
-from selenium import webdriver
-from selenium.webdriver.chrome.options import Options
-from selenium.webdriver.common.by import By
 from database import *
 
-def get_driver():
-    '''Detecteerd OS en past chromedriver aan'''
-    platforms = {
-        'linux' : './chromedriver',
-        'win32' : 'chromedriver.exe'
-    }
-    if sys.platform not in platforms:
-        return sys.platform
-    
-    return platforms[sys.platform]
-
-
-
-def scrape(links):
-    '''Haalt informatie uit evenementpagina's via URL'''
-    data = []
-    for link in links:
-        print(link)
-        request = requests.get(link)
-        soup = BeautifulSoup(request.text, features="html.parser")
-
-        # maakt een dict aan voor de informatie uit de event page
-        datapoint = dict()
-
-        # voegt hoeveeheid aangeboden, gevraagde en verkochte tickets toe aan dict
-        ticket_soup = soup.find_all("span", { "class" : "css-v0hcsa e7cn512" }) 
-
-        for i, feature in enumerate(['aangeboden', 'verkocht', 'gezocht' ]):
-            try:
-                datapoint[feature] = int(ticket_soup[i].span.text)
-            except:
-                datapoint[feature] = 0
-
-        # voegt naam van event toe aan dict
-        event_json = str(soup.find_all("script", { "type" : "application/ld+json"})[0].string)
-        event_soup = json.loads(''.join([event_json[i] for i in range(len(event_json)) if event_json[i] != "\n"]))
-        datapoint['name'] = event_soup['itemListElement'][3]['item']['name']
-        
-        # voegt event datum toe aan dict
-        event_date = soup.findAll("div", {"class": "css-102v2t9 ey3w7ki1"})[0].text
-        datapoint['event_date'] = event_date.split('}')[-1]
-
-        # voegt locatie toe
-        datapoint['location'] = soup.findAll("div", {"class": "css-102v2t9 ey3w7ki1"})[1].text # locatie
-
-        # voegt facebook link toe indien beschikbaar
-        try:
-            datapoint['facebook'] = soup.find("div", {"class": "css-1fwnys8 e1tolpgy2"}).find('a').get('href')
-        except:
-            datapoint['facebook'] = 'None'
-
-        # voegt ticketswap link toe
-        datapoint['link'] = link
-
-
-        data.append(datapoint)
-
-    # zet lijst van dicts om naar dataframe
-    df = pd.DataFrame(data)
-
-    # voeg het huidige tijdstip toe aan df
-    df['timestamp'] = [datetime.now(tz=None).strftime("%Y/%m/%d %H:%M:%S") for i in range(len(df))] 
-
-    return df
-
-
-
-
-
-def links():
-    '''Verzamelt links van de ticketswap festival pagina'''
-    options = Options()
-    options.headless = True
-    chromedriver = webdriver.Chrome(get_driver(), options=options)
-    chromedriver.get('https://www.ticketswap.nl/festivals')
-    xpath = []
-    links = []
-    events = []
-    is_event = '/event/'
-
-    # klikt op de 'laat meer zien' knop tot alle evenementen vertoond worden
-    #t = 0
-    #while True:
-    #    try:
-    #        chromedriver.find_element(By.XPATH, '//h4[text()="Laat meer zien"]').click()
-    #        time.sleep(0.5)
-
-    #    except:
-    #        print('no load more')
-    #        break
-
-
-    # append alle links op pagina
-    xpath.extend(chromedriver.find_elements(By.XPATH, '//a'))
-
-    for x in xpath:
-        links.append(str(x.get_attribute("href")))# append link naar list
-
-    chromedriver.close()
-
-    # filtert op links die naar evenementpagina's verwijzen
-    events = [x for x in links if is_event in x]
-    
-    print('{} links found'.format(len(events)))
-    print('scraping...')
-    return events
-
-
-
-
-
-def create():
-    conn = pyodbc.connect('DRIVER={};PORT=1433;SERVER={};PORT=1443;DATABASE={};UID={};PWD={}'.format(driver, server, database, username, password))
-    c = conn.cursor()
-
-    c.execute('''IF OBJECT_ID('dbo.ticket_data', 'U') IS NULL
-    CREATE TABLE ticket_data (
-    aangeboden int, 
-    verkocht int, 
-    gezocht int, 
-    name varchar(255), 
-    event_date varchar(255), 
-    location varchar(255), 
-    facebook varchar(255), 
-    link varchar(255),
-    timestamp varchar(255)
-    );''')
-    
-    conn.commit()
-    conn.close()
-
-
-
-def update_values(data): 
+def update_database(data): 
     '''Update db with scraped data'''
     print('updating...')
-    conn = pyodbc.connect('DRIVER={};PORT=1433;SERVER={};PORT=1443;DATABASE={};UID={};PWD={}'.format(driver, server, database, username, password))
-    c = conn.cursor()
+    timestamp = datetime.now(tz=None).strftime("%Y/%m/%d %H:%M:%S")
 
+    conn = mysql.connector.connect(**access)
+    
+    
+    c = conn.cursor(buffered=True)
+
+    # create table if not exists
+    # c.execute('''CREATE TABLE IF NOT EXISTS ticket_data (
+    # ID int,
+    # aangeboden int, 
+    # verkocht int, 
+    # gezocht int,
+    # laagste_prijs varchar(255),
+    # timestamp varchar(255)
+    # );''')
+    
+    # update table
     new_values = [tuple(row) for row in data.itertuples(index=False)]
-    c.executemany('INSERT INTO ticket_data (aangeboden, verkocht, gezocht, name, event_date, location, facebook, link, timestamp) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?);', new_values)
+    
+    limit = len(new_values)
+    # check if the entry will be different from the last
+    c.execute('''SELECT ID, aangeboden, verkocht, gezocht, laagste_prijs
+                FROM ticket_data
+                    ORDER BY timestamp DESC
+                    LIMIT %s''', (limit,)) 
+    old_values = [tuple(row) for row in c]
+    
 
+    values_to_add = [tuple(row) for row in new_values if row not in old_values]
+    print('values to add')
+    print(values_to_add)
+
+    values_to_update = [row[0] for row in new_values if row in old_values] # for setting all unchanged last values to the current timestamp
+    print('values to update')
+    print(values_to_update)
+    
+    time_list = [timestamp] * len(values_to_update)
+    
+    c.execute('SELECT timestamp FROM ticket_data ORDER BY timestamp DESC LIMIT 1')
+    last_timestamp = [row for row in c]
+    last_time_list = [last_timestamp[0][0]] * len(values_to_update)
+    
+    data_timestamp = list(zip(time_list,values_to_update, last_time_list))# combining 3 lists to tuple list
+    
+    c.executemany('''INSERT INTO ticket_data (
+                                        ID,
+                                        aangeboden, 
+                                        verkocht, 
+                                        gezocht, 
+                                        laagste_prijs) 
+                                    VALUES 
+                                        (%s, %s, %s, %s, %s);''', values_to_add)
+    c.execute('UPDATE ticket_data SET timestamp = %s WHERE timestamp IS NULL;', (timestamp,))# set timestamp for added values
+    c.executemany('UPDATE ticket_data SET timestamp = %s WHERE ID = %s AND timestamp = %s', (data_timestamp)) # set all unchanged last vcalues to current timestamp
     conn.commit()
     conn.close()
 
-data = scrape(links())
-create()
-update_values(data)
+def update_links(links):
+    '''Update db with links'''
+    
+    conn = mysql.connector.connect(**access)
+    
+    c = conn.cursor()
+
+    # c.execute('''CREATE TABLE IF NOT EXISTS link_data (
+    # ID int NOT NULL AUTO_INCREMENT,
+    # name varchar(255),
+    # event_date varchar(255),
+    # location varchar(255),
+    # city varchar(255),
+    # country varchar(255),
+    # facebook varchar(255), 
+    # link varchar(255),
+    # PRIMARY KEY (ID)
+    # );''')
+
+    # update table
+    new_links = [tuple(row) for row in links.itertuples(index=False)]
+
+    c.execute('''SELECT name, event_date, location, city, country, facebook, link FROM link_data''')
+    old_links = [tuple(row) for row in c]
+    print('old links')
+    print(old_links)
+    links_to_add = [tuple(row) for row in new_links if row not in old_links]
+    print('links to add')
+    print(links_to_add)
+    # add new links to table
+    c.executemany('''INSERT INTO link_data (
+                                        name,
+                                        event_date,
+                                        location,
+                                        city,
+                                        country,
+                                        facebook,
+                                        link)
+                                    VALUES
+                                        (%s, %s, %s, %s, %s, %s, %s);''', links_to_add)
+
+    conn.commit()
+    conn.close()

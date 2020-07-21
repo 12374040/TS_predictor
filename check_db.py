@@ -5,7 +5,7 @@ from database import *
 
 
 def check_database():
-    conn = pyodbc.connect('DRIVER={};PORT=1433;SERVER={};PORT=1443;DATABASE={};UID={};PWD={}'.format(driver, server, database, username, password))
+    conn = pyodbc.connect(access)
 
     df = pd.read_sql_query('''
     SELECT 
@@ -14,7 +14,9 @@ def check_database():
         verkocht, 
         gezocht,
         event_date, 
-        location, 
+        location,
+        city,
+        country,
         facebook, 
         link, 
         timestamp 
@@ -27,6 +29,6 @@ def check_database():
 
     df = df.sort_values(['name', 'timestamp'], ascending=[True, False])
 
-    return df.iloc[0, :]
+    return print(df)
 
-print(check_database())
+check_database()
