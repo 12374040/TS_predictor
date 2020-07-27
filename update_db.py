@@ -49,7 +49,7 @@ def update_database(data):
     
     c.execute('SELECT timestamp FROM ticket_data ORDER BY timestamp DESC LIMIT 1')
     last_timestamp = [row for row in c]
-    last_time_list = [last_timestamp[0][0]] * len(values_to_update)
+    last_time_list = [last_timestamp] * len(values_to_update)
     
     data_timestamp = list(zip(time_list,values_to_update, last_time_list))# combining 3 lists to tuple list
     

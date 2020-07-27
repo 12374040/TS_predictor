@@ -7,7 +7,6 @@ import pandas as pd
 from selenium import webdriver
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.common.by import By
-from main import visited_links
 
 def get_driver():
     '''Detecteerd OS en past chromedriver aan'''
@@ -20,12 +19,12 @@ def get_driver():
     
     return platforms[sys.platform]
 
-def gather_links(url):
+def gather_links(url, visited_links):
     '''Verzamelt links van de ticketswap festival pagina'''
     options = Options()
     options.headless = True
     chromedriver = webdriver.Chrome(get_driver(), options=options)
-    chromedriver.get(url)
+    chromedriver.get('https://www.ticketswap.nl/festivals')
     visited_links.append(url)
     xpath = []
     links = []
@@ -55,9 +54,9 @@ def gather_links(url):
     
     print('{} links found'.format(len(events)))
     
-    get_link_data(events)
+    get_link_data(events, visited_links)
 
-def get_link_data(links):
+def get_link_data(links, visited_links):
     link_list = []
 
     for link in list(set(links)):
@@ -97,7 +96,7 @@ def get_link_data(links):
                 print('now it is a hub')
                 print(link)
                 
-                gather_links(link)
+                gather_links(link, visited_links)
             # print('hub event page')
             # print(link)
         
