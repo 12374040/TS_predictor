@@ -24,7 +24,7 @@ def gather_links(url, visited_links):
     options = Options()
     options.headless = True
     chromedriver = webdriver.Chrome(get_driver(), options=options)
-    chromedriver.get('https://www.ticketswap.nl/festivals')
+    chromedriver.get(url)
     visited_links.append(url)
     xpath = []
     links = []
@@ -74,7 +74,7 @@ def get_link_data(links, visited_links):
         }
         link_data['name'] = doc.xpath('/html/body/div/div[2]/div[1]/div/a/h1/text()')[0]
         try:
-            doc.xpath('//*[@id="__next"]/div[1]/div[1]/div[2]/div[2]/div[3]/span/span[1]/text()')[0]
+            doc.xpath('/html/body/div/div[3]/div/div[1]/p[1]/text()')[0]
         except:
             print(link + ':data not found!')
             continue
@@ -90,13 +90,25 @@ def get_link_data(links, visited_links):
             print(link)
         except:
             try:
-                print(doc.xpath('/html/body/div/div[4]/div[2]/ul/li[1]/a/div/div/div/footer/strong/text()')[0])
-                print('still no hub event page')
+                print(doc.xpath('/html/body/div/div[4]/div[2]/header/div/h2/text()')[0])
+                if doc.xpath('/html/body/div/div[4]/div[2]/header/div/h2/text()')[0] != 'Beschikbare tickets':
+                    print('now it is a hub')
+                    print(link)
+                    
+                    gather_links(link, visited_links)
+                else:
+                    print('still no hub event page')
             except:
-                print('now it is a hub')
-                print(link)
-                
-                gather_links(link, visited_links)
+                try:
+                    if doc.xpath('/html/body/div/div[4]/div[1]/header/div/h2/text()')[0] != "Beschikbare tickets":
+                        print('now it is a hub2')
+                        print(link)
+                        
+                        gather_links(link, visited_links)
+                except:
+                    print('last except')
+                    print(link)
+                    gather_links(link, visited_links)
             # print('hub event page')
             # print(link)
         
