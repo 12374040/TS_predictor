@@ -14,6 +14,7 @@ def get_driver():
         'linux' : './chromedriver',
         'win32' : 'chromedriver.exe'
     }
+    print(sys.platform)
     if sys.platform not in platforms:
         print(sys.platform)
         return sys.platform
