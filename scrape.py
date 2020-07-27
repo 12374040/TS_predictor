@@ -28,9 +28,9 @@ def scrape():
         event_data['ID'] = link[1]
 
         try:
-            event_data['aangeboden'] = int(doc.xpath('//*[@id="__next"]/div[1]/div[1]/div[2]/div[2]/div[1]/span/span[1]/text()')[0])
-            event_data['verkocht'] = int(doc.xpath('//*[@id="__next"]/div[1]/div[1]/div[2]/div[2]/div[2]/span/span[1]/text()')[0])
-            event_data['gezocht'] = int(doc.xpath('//*[@id="__next"]/div[1]/div[1]/div[2]/div[2]/div[3]/span/span[1]/text()')[0])
+            event_data['aangeboden'] = int(doc.xpath('/html/body/div/div[3]/div/div[1]/p[1]/text()')[0])
+            event_data['verkocht'] = int(doc.xpath('/html/body/div/div[3]/div/div[2]/p[1]/text()')[0])
+            event_data['gezocht'] = int(doc.xpath('/html/body/div/div[3]/div/div[3]/p[1]/text()')[0])
         except:
             print(link)
             print(':data not found!')
@@ -38,12 +38,12 @@ def scrape():
         
         if event_data['aangeboden'] != 0:
             try:
-                event_data['laagste_prijs'] = (doc.xpath('/html/body/div[1]/div[2]/div[2]/ul/li[1]/a/div/div/div/footer/strong/text()')[0])
+                event_data['laagste_prijs'] = (doc.xpath('/html/body/div/div[4]/div[1]/ul/li/a/div/div/div/footer/strong/text()')[0])
             except:
                 event_data['laagste_prijs'] = 'NaN'
         else:
             try:
-                event_data['laagste_prijs'] = (doc.xpath('/html/body/div/div[2]/div[2]/ul/li[1]/a/div/div/div/footer/strong/text()')[0])
+                event_data['laagste_prijs'] = (doc.xpath('/html/body/div/div[4]/div[2]/ul/li[1]/a/div/div/div/footer/strong/text()')[0])
             except:
                 print('not able to get price of last sold ticket')
                 print(go_link)

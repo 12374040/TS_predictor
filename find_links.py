@@ -73,25 +73,25 @@ def get_link_data(links):
             'facebook':'',
             'link':''
         }
-        link_data['name'] = doc.xpath('//*[@id="__next"]/div[1]/div[1]/div[2]/a/h1/text()')[0]
+        link_data['name'] = doc.xpath('/html/body/div/div[2]/div[1]/div/a/h1/text()')[0]
         try:
             doc.xpath('//*[@id="__next"]/div[1]/div[1]/div[2]/div[2]/div[3]/span/span[1]/text()')[0]
         except:
             print(link + ':data not found!')
             continue
         
-        link_data['event_date'] = doc.xpath('//*[@id="__next"]/div[1]/div[1]/div[2]/div[3]/div[1]/text()')[0]
-        link_data['location'] = doc.xpath('//*[@id="__next"]/div[1]/div[1]/div[2]/div[3]/div[2]/span[2]/a[1]/text()')[0]
-        link_data['city'] = doc.xpath('//*[@id="__next"]/div[1]/div[1]/div[2]/div[3]/div[2]/span[2]/a[2]/text()')[0]
-        link_data['country'] = doc.xpath('//*[@id="__next"]/div[1]/div[1]/div[2]/div[3]/div[2]/span[2]/text()[2]')[0][2:]
+        link_data['event_date'] = doc.xpath('/html/body/div/div[2]/div[1]/div/div[2]/div[1]/text()')[0]
+        link_data['location'] = doc.xpath('/html/body/div/div[2]/div[1]/div/div[2]/div[2]/span[2]/a[1]/text()')[0]
+        link_data['city'] = doc.xpath('/html/body/div/div[2]/div[1]/div/div[2]/div[2]/span[2]/a[2]/text()')[0]
+        link_data['country'] = doc.xpath('/html/body/div/div[2]/div[1]/div/div[2]/div[2]/span[2]/text()[2]')[0][2:]
         try:
             
-            print(doc.xpath('/html/body/div[1]/div[2]/div[2]/ul/li[1]/a/div/div/div/footer/strong/text()')[0])
+            print(doc.xpath('/html/body/div/div[4]/div[1]/ul/li[1]/a/div/div/div/footer/strong/text()')[0])
             print('nononono hub event page')
             print(link)
         except:
             try:
-                print(doc.xpath('/html/body/div/div[2]/div[2]/ul/li[1]/a/div/div/div/footer/strong/text()')[0])
+                print(doc.xpath('/html/body/div/div[4]/div[2]/ul/li[1]/a/div/div/div/footer/strong/text()')[0])
                 print('still no hub event page')
             except:
                 print('now it is a hub')
@@ -102,7 +102,7 @@ def get_link_data(links):
             # print(link)
         
         try:
-            link_data['facebook'] = doc.xpath('//*[@id="__next"]/div[1]/div[1]/div[2]/div[1]/div/a')[0].get("href")
+            link_data['facebook'] = doc.xpath('/html/body/div/div[2]/div[1]/div/div[1]/div/a')[0].get("href")
         except:
             link_data['facebook'] = 'Nan'
 
